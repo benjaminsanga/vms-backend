@@ -1,6 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 const { getCurrentTime, getCurrentDateTime } = require('./helper');
 
 const app = express();
@@ -8,6 +9,7 @@ const port = 8000;
 
 // Middleware
 app.use(bodyParser.json());
+app.use(cors()); // Enable CORS for all routes
 
 // MySQL connection
 const db = mysql.createConnection({
@@ -31,7 +33,7 @@ app.post('/save-visitor', (req, res) => {
   const query = `
     INSERT INTO visitors 
     (nameOfVisitor, nameOfHost, purposeOfVisit, itemsDeposited, safeNumber, phoneNumber, tagNumber, dateOfVisit, checkInTime, checkOutTime, comment, updatedAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const currentTime = getCurrentTime()
   const currentDateTime = getCurrentDateTime()
@@ -59,7 +61,7 @@ app.post('/save-visitor', (req, res) => {
   });
 });
 
-app.put('/update-visitor/:id', (req, res) => {
+app.patch('/update-visitor/:id', (req, res) => {
   const id = req.params.id;
   const visitor = req.body;
   const query = `
@@ -82,18 +84,54 @@ app.put('/update-visitor/:id', (req, res) => {
   });
 });
 
-app.get('/get-all-visitors', (req, res) => {
-  const query = 'SELECT * FROM visitors';
+// app.get('/get-all-visitors', (req, res) => {
+//   const query = 'SELECT * FROM visitors';
 
-  db.query(query, (err, results) => {
+//   db.query(query, (err, results) => {
+//     if (err) {
+//       console.error('Error retrieving visitors:', err);
+//       res.status(500).send('Error retrieving visitors');
+//       return;
+//     }
+//     res.status(200).json(results);
+//   });
+// });
+
+app.get('/get-all-visitors', (req, res) => {
+  const page = parseInt(req.query.page) || 1;  // Get the page number from query, default to 1 if not provided
+  const limit = parseInt(req.query.limit) || 10; // Get the limit from query, default to 10 if not provided
+  const offset = (page - 1) * limit;
+
+  const query = 'SELECT * FROM visitors LIMIT ? OFFSET ?';
+  const countQuery = 'SELECT COUNT(*) AS count FROM visitors';
+
+  db.query(query, [limit, offset], (err, results) => {
     if (err) {
       console.error('Error retrieving visitors:', err);
       res.status(500).send('Error retrieving visitors');
       return;
     }
-    res.status(200).json(results);
+
+    db.query(countQuery, (countErr, countResults) => {
+      if (countErr) {
+        console.error('Error retrieving visitor count:', countErr);
+        res.status(500).send('Error retrieving visitor count');
+        return;
+      }
+
+      const totalVisitors = countResults[0].count;
+      const totalPages = Math.ceil(totalVisitors / limit);
+
+      res.status(200).json({
+        visitors: results,
+        totalVisitors,
+        totalPages,
+        currentPage: page
+      });
+    });
   });
 });
+
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

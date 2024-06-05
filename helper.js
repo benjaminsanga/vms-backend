@@ -1,4 +1,4 @@
-export const getCurrentTime = () => {
+const getCurrentTime = () => {
   const now = new Date();
   const hours = String(now.getHours()).padStart(2, '0');
   const minutes = String(now.getMinutes()).padStart(2, '0');
@@ -6,7 +6,7 @@ export const getCurrentTime = () => {
   return `${hours}:${minutes}:${seconds}`;
 };
 
-export const getCurrentDateTime = () => {
+const getCurrentDateTime = () => {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -16,3 +16,8 @@ export const getCurrentDateTime = () => {
   const seconds = String(now.getSeconds()).padStart(2, '0');
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 };
+
+module.exports = {
+  getCurrentTime,
+  getCurrentDateTime
+}
