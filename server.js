@@ -2,7 +2,7 @@ const express = require('express');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const { getCurrentTime, getCurrentDateTime } = require('./helper');
+const { getCurrentTime, getCurrentDateTime, getOneYearAgoDate, getCurrentDate } = require('./helper');
 
 const app = express();
 const port = 8000;
@@ -32,8 +32,8 @@ app.post('/save-visitor', (req, res) => {
   const visitor = req.body;
   const query = `
     INSERT INTO visitors 
-    (nameOfVisitor, nameOfHost, purposeOfVisit, itemsDeposited, safeNumber, phoneNumber, tagNumber, dateOfVisit, checkInTime, checkOutTime, comment, updatedAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (nameOfVisitor, nameOfHost, purposeOfVisit, itemsDeposited, safeNumber, phoneNumber, tagNumber, dateOfVisit, checkInTime, checkOutTime, comment, enteredBy, updatedAt)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const currentTime = getCurrentTime()
   const currentDateTime = getCurrentDateTime()
@@ -50,6 +50,7 @@ app.post('/save-visitor', (req, res) => {
     currentTime,
     null,
     visitor.comment,
+    visitor.enteredBy,
     currentDateTime
   ], (err, result) => {
     if (err) {
@@ -84,28 +85,17 @@ app.patch('/update-visitor/:id', (req, res) => {
   });
 });
 
-// app.get('/get-all-visitors', (req, res) => {
-//   const query = 'SELECT * FROM visitors';
-
-//   db.query(query, (err, results) => {
-//     if (err) {
-//       console.error('Error retrieving visitors:', err);
-//       res.status(500).send('Error retrieving visitors');
-//       return;
-//     }
-//     res.status(200).json(results);
-//   });
-// });
-
 app.get('/get-all-visitors', (req, res) => {
   const page = parseInt(req.query.page) || 1;  // Get the page number from query, default to 1 if not provided
   const limit = parseInt(req.query.limit) || 10; // Get the limit from query, default to 10 if not provided
+  const from = req.query.from || getOneYearAgoDate();
+  const to = req.query.to || getCurrentDate();
   const offset = (page - 1) * limit;
 
-  const query = 'SELECT * FROM visitors LIMIT ? OFFSET ?';
+  const query = 'SELECT * FROM visitors WHERE dateOfVisit >= ? AND dateOfvisit <= ? LIMIT ? OFFSET ?';
   const countQuery = 'SELECT COUNT(*) AS count FROM visitors';
 
-  db.query(query, [limit, offset], (err, results) => {
+  db.query(query, [from, to, limit, offset], (err, results) => {
     if (err) {
       console.error('Error retrieving visitors:', err);
       res.status(500).send('Error retrieving visitors');

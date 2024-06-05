@@ -6,6 +6,23 @@ const getCurrentTime = () => {
   return `${hours}:${minutes}:${seconds}`;
 };
 
+const getCurrentDate = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+const getOneYearAgoDate = () => {
+  let startDate = new Date();
+  startDate.setFullYear(startDate.getFullYear() - 1);
+  const year = startDate.getFullYear();
+  const month = String(startDate.getMonth() + 1).padStart(2, '0');
+  const day = String(startDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 const getCurrentDateTime = () => {
   const now = new Date();
   const year = now.getFullYear();
@@ -19,5 +36,7 @@ const getCurrentDateTime = () => {
 
 module.exports = {
   getCurrentTime,
-  getCurrentDateTime
+  getCurrentDateTime,
+  getCurrentDate,
+  getOneYearAgoDate
 }
